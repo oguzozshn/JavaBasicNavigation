@@ -1,16 +1,16 @@
 public class City {
     public String Name;
-    public double Latitude;
-    public double Longitude;
+    public String Latitude;
+    public String Longitude;
 
-    public City(String name, double latitude, double longitude){
+    public City(String name, String latitude, String longitude){
         this.Name = name;
         this.Latitude = latitude;
         this.Longitude = longitude;
     }
 
     public String getName() { return Name; };
-    public double getLat() { return Latitude; };
-    public double getLng() { return Longitude; };
+    public String getLat() { return Latitude; };
+    public String getLng() { return Longitude; };
 
 }
