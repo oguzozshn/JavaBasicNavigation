@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -42,10 +43,20 @@ public class Main {
             JFrame frame = new JFrame("Harita");
             frame.setSize(800, 600);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setLayout(new BorderLayout());
 
-            frame.add(new MapPanel(cities));
+            MapPanel mapPanel = new MapPanel(cities);
+
+            JButton resetButton = new JButton("Reset");
+            resetButton.addActionListener(e -> mapPanel.reset());
+
+            JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            bottom.add(resetButton);
+
+            frame.add(mapPanel, BorderLayout.CENTER);
+            frame.add(bottom, BorderLayout.SOUTH);
+
             frame.setVisible(true);
         });
     }
 }
-

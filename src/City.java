@@ -11,6 +11,8 @@ public class City {
 
     public String getName() { return Name; };
     public String getLat() { return Latitude; };
-    public String getLng() { return Longitude; };
+    public String getLng() { return Longitude; }
 
+    public double lat() { return Double.parseDouble(Latitude); }
+    public double lon() { return Double.parseDouble(Longitude); }
 }
