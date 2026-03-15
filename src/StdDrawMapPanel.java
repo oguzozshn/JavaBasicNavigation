@@ -1,12 +1,19 @@
 import java.awt.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StdDrawMapPanel {
     private final List<City> cities;
+    private final List<List<double[]>> turkeyBorders;
 
-    private final double minLon = 26, maxLon = 45;
-    private final double minLat = 36, maxLat = 43;
+    private final double minLon = 25, maxLon = 45;
+    private final double minLat = 35, maxLat = 43;
+    private final double refLat = (minLat + maxLat) / 2.0;
 
     private int selectedA = -1;
     private int selectedB = -1;
@@ -27,6 +34,7 @@ public class StdDrawMapPanel {
     public  StdDrawMapPanel(List<City> cities) {
         this.cities = cities;
         this.roads = buildKnnRoads(K_NEAREST);
+        this.turkeyBorders = loadTurkeyBorders("src/Turkey.json");
     }
 
     private void drawCities() {
@@ -49,7 +57,8 @@ public class StdDrawMapPanel {
 
     private void draw() {
         StdDraw.clear(new Color(245, 245, 245));
-//
+
+          drawTurkeyBorders();
           drawRoads();
           drawPath();
           drawCities();
@@ -72,13 +81,7 @@ public class StdDrawMapPanel {
     }
 
     private Point cityToPoint(City c) {
-        double lon = c.lon();
-        double lat = c.lat();
-
-        int x = (int) ((lon - minLon) / (maxLon - minLon) * CANVAS_WIDTH);
-        int y = (int) ((maxLat - lat) / (maxLat - minLat) * CANVAS_HEIGHT);
-
-        return new Point(x, y);
+        return lonLatToPoint(c.lon(), c.lat());
     }
 
     private static class Point {
@@ -281,5 +284,118 @@ public class StdDrawMapPanel {
         }
         Collections.reverse(path);
         return path;
+    }
+
+    private void drawTurkeyBorders() {
+        if (turkeyBorders == null || turkeyBorders.isEmpty()) return;
+
+        StdDraw.setPenRadius(0.002);
+        StdDraw.setPenColor(new Color(80, 80, 80));
+
+        for (List<double[]> ring : turkeyBorders) {
+            if (ring.size() < 2) continue;
+
+            for (int i = 0; i < ring.size() - 1; i++) {
+                Point p1 = lonLatToPoint(ring.get(i)[0], ring.get(i)[1]);
+                Point p2 = lonLatToPoint(ring.get(i + 1)[0], ring.get(i + 1)[1]);
+                StdDraw.line(p1.x, p1.y, p2.x, p2.y);
+            }
+        }
+    }
+
+    private Point lonLatToPoint(double lon, double lat) {
+        double cosLat = Math.cos(Math.toRadians(refLat));
+
+        double projectedMinLon = minLon * cosLat;
+        double projectedMaxLon = maxLon * cosLat;
+        double projectedLon = lon * cosLat;
+
+        double mapWidth = projectedMaxLon - projectedMinLon;
+        double mapHeight = maxLat - minLat;
+
+        double scaleX = CANVAS_WIDTH / mapWidth;
+        double scaleY = CANVAS_HEIGHT / mapHeight;
+        double scale = Math.min(scaleX, scaleY);
+
+        double drawnWidth = mapWidth * scale;
+        double drawnHeight = mapHeight * scale;
+
+        double offsetX = (CANVAS_WIDTH - drawnWidth) / 2.0;
+        double offsetY = (CANVAS_HEIGHT - drawnHeight) / 2.0;
+
+        int x = (int) Math.round(offsetX + (projectedLon - projectedMinLon) * scale);
+        int y = (int) Math.round(offsetY + (maxLat - lat) * scale);
+
+        return new Point(x, y);
+    }
+
+    private List<List<double[]>> loadTurkeyBorders(String filePath) {
+        try {
+            String json = Files.readString(Path.of(filePath));
+            return parseMultiPolygonOuterRings(json);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    private List<List<double[]>> parseMultiPolygonOuterRings(String json) {
+        int coordinatesIndex = json.indexOf("\"coordinates\"");
+        if (coordinatesIndex == -1) return Collections.emptyList();
+
+        int start = json.indexOf('[', coordinatesIndex);
+        if (start == -1) return Collections.emptyList();
+
+        List<List<double[]>> rings = new ArrayList<>();
+        List<double[]> currentRing = null;
+
+        int depth = 0;
+        int pointStart = -1;
+
+        for (int i = start; i < json.length(); i++) {
+            char ch = json.charAt(i);
+
+            if (ch == '[') {
+                depth++;
+
+                if (depth == 3) {
+                    currentRing = new ArrayList<>();
+                } else if (depth == 4) {
+                    pointStart = i;
+                }
+            } else if (ch == ']') {
+                if (depth == 4 && currentRing != null && pointStart != -1) {
+                    String pointText = json.substring(pointStart, i + 1);
+                    double[] point = parsePoint(pointText);
+                    if (point != null) {
+                        currentRing.add(point);
+                    }
+                    pointStart = -1;
+                } else if (depth == 3 && currentRing != null) {
+                    if (!currentRing.isEmpty()) {
+                        rings.add(currentRing);
+                    }
+                    currentRing = null;
+                }
+
+                depth--;
+                if (depth == 0) break;
+            }
+        }
+
+        return rings;
+    }
+
+    private double[] parsePoint(String pointText) {
+        Pattern pointPattern = Pattern.compile("\\[\\s*(-?\\d+(?:\\.\\d+)?)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\s*\\]");
+        Matcher matcher = pointPattern.matcher(pointText);
+
+        if (matcher.find()) {
+            double lon = Double.parseDouble(matcher.group(1));
+            double lat = Double.parseDouble(matcher.group(2));
+            return new double[]{lon, lat};
+        }
+
+        return null;
     }
 }
