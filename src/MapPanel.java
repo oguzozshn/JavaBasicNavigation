@@ -24,7 +24,7 @@ public class MapPanel extends JPanel {
     private final List<List<Integer>> roads;
 
     // Graph kurma parametreleri
-    private static final int K_NEAREST = 4;
+    private static final int K_NEAREST = 3;
     private static final double MAX_EDGE_KM = 450.0;
 
     // UI

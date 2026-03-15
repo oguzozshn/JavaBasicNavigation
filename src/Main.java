@@ -39,24 +39,28 @@ public class Main {
             return;
         }
 
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Harita");
-            frame.setSize(800, 600);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setLayout(new BorderLayout());
+//        SwingUtilities.invokeLater(() -> {
+//            JFrame frame = new JFrame("Harita");
+//            frame.setSize(800, 600);
+//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//            frame.setLayout(new BorderLayout());
+//
+//            MapPanel mapPanel = new MapPanel(cities);
+//
+//            JButton resetButton = new JButton("Reset");
+//            resetButton.addActionListener(e -> mapPanel.reset());
+//
+//            JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+//            bottom.add(resetButton);
+//
+//            frame.add(mapPanel, BorderLayout.CENTER);
+//            frame.add(bottom, BorderLayout.SOUTH);
+//
+//            frame.setVisible(true);
+//        });
 
-            MapPanel mapPanel = new MapPanel(cities);
+        StdDrawMapPanel mapPanel = new StdDrawMapPanel(cities);
+        mapPanel.run();
 
-            JButton resetButton = new JButton("Reset");
-            resetButton.addActionListener(e -> mapPanel.reset());
-
-            JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            bottom.add(resetButton);
-
-            frame.add(mapPanel, BorderLayout.CENTER);
-            frame.add(bottom, BorderLayout.SOUTH);
-
-            frame.setVisible(true);
-        });
     }
 }
